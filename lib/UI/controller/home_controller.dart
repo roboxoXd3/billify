@@ -59,11 +59,8 @@ class HomeController extends GetxController {
 
       // Create Excel workbook and remove default sheet
       var excel = Excel.createExcel();
-      if (excel.getDefaultSheet() != null) {
-        excel.delete(excel.getDefaultSheet()!);
-      }
 
-      // Create our Bills sheet
+      // First create our Bills sheet
       var sheet = excel['Bills'];
 
       // Add headers
@@ -77,6 +74,14 @@ class HomeController extends GetxController {
         TextCellValue('Total Amount'),
         TextCellValue('Type')
       ]);
+
+      // Remove Sheet1 after creating Bills sheet
+      if (excel.sheets.containsKey('Sheet1')) {
+        excel.delete('Sheet1');
+      }
+
+      // Ensure only Bills sheet exists
+      excel.sheets.removeWhere((key, value) => key != 'Bills');
 
       // Add data rows
       for (var bill in bills) {
@@ -114,13 +119,15 @@ class HomeController extends GetxController {
 
         if (directory != null) {
           final now = DateTime.now();
-          final fileName = 'bills_${now.year}_${now.month}.xlsx';
+          final fileName =
+              'Billify_Report_${now.day}-${now.month}-${now.year}_${now.hour}-${now.minute}.xlsx';
           filePath = '${directory.path}/$fileName';
         }
       } else {
         final directory = await getApplicationDocumentsDirectory();
         final now = DateTime.now();
-        final fileName = 'bills_${now.year}_${now.month}.xlsx';
+        final fileName =
+            'Billify_Report_${now.day}-${now.month}-${now.year}_${now.hour}-${now.minute}.xlsx';
         filePath = '${directory.path}/$fileName';
       }
 
