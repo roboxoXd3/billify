@@ -37,6 +37,10 @@ class _DataDetailViewState extends State<DataDetailView> {
             icon: const Icon(Icons.print_rounded, color: Colors.white),
             onPressed: () => _pdfService.generateAndPrintBill(widget.billData!),
           ),
+          IconButton(
+            icon: const Icon(Icons.share_rounded, color: Colors.white),
+            onPressed: () => _pdfService.generateAndShareBill(widget.billData!),
+          ),
           20.width
         ],
       ),
