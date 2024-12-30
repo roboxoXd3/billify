@@ -49,10 +49,8 @@ class HomeController extends GetxController {
       // Check Android version
       if (Platform.isAndroid) {
         if (await Permission.manageExternalStorage.request().isGranted) {
-          // For Android 11 and above
           await Permission.manageExternalStorage.request();
         } else {
-          // For Android 10 and below
           await Permission.storage.request();
         }
       }
@@ -109,8 +107,9 @@ class HomeController extends GetxController {
 
       // Save file
       String? filePath;
-      if (Platform.isAndroid) {
         Directory? directory;
+
+      if (Platform.isAndroid) {
         if (await Directory('/storage/emulated/0/Download').exists()) {
           directory = Directory('/storage/emulated/0/Download');
         } else {
@@ -124,7 +123,7 @@ class HomeController extends GetxController {
           filePath = '${directory.path}/$fileName';
         }
       } else {
-        final directory = await getApplicationDocumentsDirectory();
+         directory = await getApplicationDocumentsDirectory();
         final now = DateTime.now();
         final fileName =
             'Billify_Report_${now.day}-${now.month}-${now.year}_${now.hour}-${now.minute}.xlsx';

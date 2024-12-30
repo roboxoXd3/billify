@@ -10,7 +10,10 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 class TemplateFormController extends GetxController {
-  String billNumber = '', totalAmount = '', productType = '';
+  String billNumber = '',
+      totalAmount = '',
+      grandTotalAmount = '',
+      productType = '';
   TextEditingController customerName = TextEditingController();
   TextEditingController customerAge = TextEditingController();
   TextEditingController customerLocation = TextEditingController();
@@ -77,19 +80,36 @@ class TemplateFormController extends GetxController {
 
   validateForm() {
     enableButton = true;
-    for (int i = 0; i < productControllers.length; i++) {
-      var prodcut = productControllers[i];
 
-      if (prodcut.productNameController.text.isEmpty) {
-        enableButton = false;
-      } else if (prodcut.qtyController.text.isEmpty) {
-        enableButton = false;
-      } else if (prodcut.amountController.text.isEmpty) {
-        enableButton = false;
-      } else if (prodcut.discountController.text.isEmpty) {
-        enableButton = false;
+    if (isOpticalTemplate) {
+      for (int i = 0; i < opticalProductController.length; i++) {
+        var opticalProduct = opticalProductController[i];
+
+        if (opticalProduct.frameNameController.text.isEmpty ||
+            opticalProduct.framePriceController.text.isEmpty ||
+            opticalProduct.lensNameController.text.isEmpty ||
+            opticalProduct.lensPriceController.text.isEmpty ||
+            opticalProduct.coatingController.text.isEmpty ||
+            opticalProduct.coatingPriceController.text.isEmpty ||
+            opticalProduct.discountController.text.isEmpty ||
+            opticalProduct.totalAmountController.text.isEmpty) {
+          enableButton = false;
+        }
+      }
+    } else {
+      for (int i = 0; i < productControllers.length; i++) {
+        var product = productControllers[i];
+
+        if (product.productNameController.text.isEmpty ||
+            product.qtyController.text.isEmpty ||
+            product.amountController.text.isEmpty ||
+            product.discountController.text.isEmpty ||
+            product.totalAmountController.text.isEmpty) {
+          enableButton = false;
+        }
       }
     }
+
     update();
   }
 
@@ -107,7 +127,7 @@ class TemplateFormController extends GetxController {
         'location': customerLocation.text,
         'created_at': DateFormat('dd/MM/yyyy').format(DateTime.now()),
         'productType': productType,
-        'grandTotal': totalAmount,
+        'grandTotal': grandTotalAmount,
         'rightSph': rightSphController.text,
         'rightCyl': rightCylController.text,
         'rightAxis': rightAxisController.text,
@@ -224,6 +244,7 @@ class TemplateFormController extends GetxController {
 
         double totalAmount = framePrice + lensPrice + coatingPrice;
         totalAmount -= totalAmount * (discount / 100);
+        grandTotalAmount = "${sum + totalAmount}";
 
         return sum + totalAmount;
       });
@@ -231,9 +252,9 @@ class TemplateFormController extends GetxController {
       return productControllers.fold(0.0, (sum, item) {
         double totalAmount =
             double.tryParse(item.totalAmountController.text) ?? 0.0;
+        grandTotalAmount = "${sum + totalAmount}";
         return sum + totalAmount;
       });
     }
   }
-
 }
