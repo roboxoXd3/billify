@@ -119,6 +119,17 @@ class TemplateFormController extends GetxController {
         Fluttertoast.showToast(msg: "Please add item.");
         return;
       }
+
+      // Create prescription details separately
+      Map<String, dynamic> prescriptionDetails = {
+        'rightSph': rightSphController.text,
+        'rightCyl': rightCylController.text,
+        'rightAxis': rightAxisController.text,
+        'leftSph': leftSphController.text,
+        'leftCyl': leftCylController.text,
+        'leftAxis': leftAxisController.text,
+      };
+
       Map<String, dynamic> customerDetails = {
         'billNumber': billNumber,
         'name': customerName.text,
@@ -128,12 +139,6 @@ class TemplateFormController extends GetxController {
         'created_at': DateFormat('dd/MM/yyyy').format(DateTime.now()),
         'productType': productType,
         'grandTotal': grandTotalAmount,
-        'rightSph': rightSphController.text,
-        'rightCyl': rightCylController.text,
-        'rightAxis': rightAxisController.text,
-        'leftSph': leftSphController.text,
-        'leftCyl': leftCylController.text,
-        'leftAxis': leftAxisController.text,
         'leftPower': leftPowerController.text,
         'rightPower': rightPowerController.text,
         'leftVisual': leftVisualController.text,
@@ -170,6 +175,7 @@ class TemplateFormController extends GetxController {
       Map<String, dynamic> customerData = {
         'customerDetails': customerDetails,
         'productData': productData,
+        'prescriptionDetails': prescriptionDetails,
       };
 
       String? existingDataJson = StorageUtil.getString(dashBoardItem);

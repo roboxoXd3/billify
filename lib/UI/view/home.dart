@@ -5,6 +5,7 @@ import 'package:billify/navigation/app_pages.dart';
 import 'package:ext_plus/ext_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:billify/services/pdf_service.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -19,90 +20,139 @@ class HomeView extends StatelessWidget {
           elevation: 0,
           backgroundColor: bgColor,
           title: const Text("Billing", style: TextStyle(color: whiteColor)),
-          // actions: [
-          //   IconButton(
-          //     icon: const Icon(Icons.search, color: whiteColor),
-          //     onPressed: () {},
-          //   ),
-          //   IconButton(
-          //     icon: const Icon(Icons.person, color: whiteColor),
-          //     onPressed: () {
-          //       Get.toNamed(Routes.profile);
-          //     },
-          //   ),
-          // ],
         ),
-        body: controller.dashboardData.validate().isEmpty
-            ? const IgnorePointer()
-            : ListView.builder(
-                itemCount: controller.dashboardData.length,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shrinkWrap: true,
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  return controller.dashboardData[index].customerDetails == null
-                      ? const IgnorePointer()
-                      : GestureDetector(
-                          onTap: () {
-                            Get.to(() =>DataDetailView(billData: controller.dashboardData[index]));
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 16),
-                            margin: const EdgeInsets.only(top: 10),
-                            decoration: BoxDecoration(
-                                color: whiteColor,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: whiteColor.withOpacity(0.2),
-                                    offset: const Offset(0, 0),
-                                    blurRadius: 6,
-                                  ),
-                                ]),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                    controller.dashboardData[index]
-                                        .customerDetails!.billNumber
-                                        .validate(),
-                                    style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600)),
-                                Text(
-                                    controller.dashboardData[index]
-                                        .customerDetails!.name
-                                        .validate(),
-                                    style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500)),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                        controller.dashboardData[index]
-                                            .customerDetails!.phoneNumber
-                                            .validate(),
-                                        style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w500)),
-                                    Text(
-                                        "Item: ${controller.dashboardData[index].productData!.length}",
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500)),
-                                  ],
-                                )
-                              ],
-                            ),
-                          ),
-                        );
-                },
+        body: Column(
+          children: [
+            // Search Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: TextField(
+                controller: controller.searchController,
+                style: const TextStyle(color: whiteColor),
+                decoration: InputDecoration(
+                  hintText: 'Search by name, bill number or phone',
+                  hintStyle: TextStyle(color: whiteColor.withOpacity(0.5)),
+                  prefixIcon: const Icon(Icons.search, color: whiteColor),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.1),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: whiteColor.withOpacity(0.1)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: whiteColor),
+                  ),
+                ),
+                onChanged: (value) => controller.searchBills(value),
               ),
+            ),
+            // Bills List
+            Expanded(
+              child: controller.filteredData.isEmpty
+                  ? Center(
+                      child: Text(
+                        controller.searchController.text.isEmpty
+                            ? 'No bills found'
+                            : 'No matching bills found',
+                        style: const TextStyle(color: whiteColor),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: controller.filteredData.length,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      shrinkWrap: true,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        return controller.filteredData[index].customerDetails ==
+                                null
+                            ? const IgnorePointer()
+                            : GestureDetector(
+                                onTap: () {
+                                  Get.to(() => DataDetailView(
+                                      billData:
+                                          controller.filteredData[index]));
+                                },
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 16),
+                                  margin: const EdgeInsets.only(top: 10),
+                                  decoration: BoxDecoration(
+                                      color: whiteColor,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: whiteColor.withOpacity(0.2),
+                                          offset: const Offset(0, 0),
+                                          blurRadius: 6,
+                                        ),
+                                      ]),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                              controller.filteredData[index]
+                                                  .customerDetails!.billNumber
+                                                  .validate(),
+                                              style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600)),
+                                          IconButton(
+                                            icon: const Icon(Icons.share,
+                                                color: Colors.blue),
+                                            onPressed: () {
+                                              PdfService().generateAndShareBill(
+                                                  controller
+                                                      .filteredData[index]);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                          controller.filteredData[index]
+                                              .customerDetails!.name
+                                              .validate(),
+                                          style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500)),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                              controller.filteredData[index]
+                                                  .customerDetails!.phoneNumber
+                                                  .validate(),
+                                              style: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w500)),
+                                          Text(
+                                              "Item: ${controller.filteredData[index].productData!.length}",
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500)),
+                                        ],
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              );
+                      },
+                    ),
+            ),
+          ],
+        ),
         floatingActionButton: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

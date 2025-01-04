@@ -154,10 +154,12 @@ class ProductData {
 class ProductResponse {
   CustomerDetails? customerDetails;
   List<ProductData>? productData;
+  PrescriptionDetails? prescriptionDetails;
 
   ProductResponse({
     this.customerDetails,
     this.productData,
+    this.prescriptionDetails,
   });
 
   factory ProductResponse.fromJson(Map<String, dynamic> json) {
@@ -170,6 +172,9 @@ class ProductResponse {
               .map((item) => ProductData.fromJson(item))
               .toList()
           : null,
+      prescriptionDetails: json['prescriptionDetails'] != null
+          ? PrescriptionDetails.fromJson(json['prescriptionDetails'])
+          : null,
     );
   }
 
@@ -177,6 +182,63 @@ class ProductResponse {
     return {
       'customerDetails': customerDetails?.toJson(),
       'productData': productData?.map((item) => item.toJson()).toList(),
+      'prescriptionDetails': prescriptionDetails?.toJson(),
     };
+  }
+}
+
+class PrescriptionDetails {
+  String? rightSph;
+  String? rightCyl;
+  String? rightAxis;
+  String? leftSph;
+  String? leftCyl;
+  String? leftAxis;
+  String? rightPower;
+  String? leftPower;
+  String? rightVisual;
+  String? leftVisual;
+
+  PrescriptionDetails({
+    this.rightSph,
+    this.rightCyl,
+    this.rightAxis,
+    this.leftSph,
+    this.leftCyl,
+    this.leftAxis,
+    this.rightPower,
+    this.leftPower,
+    this.rightVisual,
+    this.leftVisual,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'rightSph': rightSph,
+      'rightCyl': rightCyl,
+      'rightAxis': rightAxis,
+      'leftSph': leftSph,
+      'leftCyl': leftCyl,
+      'leftAxis': leftAxis,
+      'rightPower': rightPower,
+      'leftPower': leftPower,
+      'rightVisual': rightVisual,
+      'leftVisual': leftVisual,
+    };
+  }
+
+  factory PrescriptionDetails.fromJson(Map<String, dynamic> json) {
+    return PrescriptionDetails(
+      rightSph: json['rightSph'],
+      rightCyl: json['rightCyl'],
+      rightAxis: json['rightAxis'],
+      leftSph: json['leftSph'],
+      leftCyl: json['leftCyl'],
+      leftAxis: json['leftAxis'],
+      rightPower: json['rightPower'],
+      leftPower: json['leftPower'],
+      rightVisual: json['rightVisual'],
+      leftVisual: json['leftVisual'],
+    );
   }
 }

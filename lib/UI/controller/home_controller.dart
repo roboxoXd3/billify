@@ -11,8 +11,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class HomeController extends GetxController {
-  List<ProductResponse> dashboardData = List.empty(growable: true);
+  List<ProductResponse> dashboardData = [];
+  List<ProductResponse> filteredData = [];
   bool isOpticalTemplate = false;
+  TextEditingController searchController = TextEditingController();
+
   @override
   void onInit() {
     var profileData = StorageUtil.getObject(userData);
@@ -30,7 +33,7 @@ class HomeController extends GetxController {
     super.onInit();
   }
 
-  fetchData() async {
+  Future<void> fetchData() async {
     var savedDataJson = StorageUtil.getString(dashBoardItem);
 
     if (savedDataJson.validate().isNotEmpty) {
@@ -40,6 +43,7 @@ class HomeController extends GetxController {
             .toList();
       }
     }
+    filteredData = List.from(dashboardData);
     update();
   }
 
@@ -107,7 +111,7 @@ class HomeController extends GetxController {
 
       // Save file
       String? filePath;
-        Directory? directory;
+      Directory? directory;
 
       if (Platform.isAndroid) {
         if (await Directory('/storage/emulated/0/Download').exists()) {
@@ -123,7 +127,7 @@ class HomeController extends GetxController {
           filePath = '${directory.path}/$fileName';
         }
       } else {
-         directory = await getApplicationDocumentsDirectory();
+        directory = await getApplicationDocumentsDirectory();
         final now = DateTime.now();
         final fileName =
             'Billify_Report_${now.day}-${now.month}-${now.year}_${now.hour}-${now.minute}.xlsx';
@@ -155,5 +159,29 @@ class HomeController extends GetxController {
         toastLength: Toast.LENGTH_LONG,
       );
     }
+  }
+
+  void searchBills(String query) {
+    if (query.isEmpty) {
+      filteredData = List.from(dashboardData);
+    } else {
+      filteredData = dashboardData.where((bill) {
+        final customerDetails = bill.customerDetails;
+        return customerDetails != null &&
+            (customerDetails.name
+                    .toString()
+                    .toLowerCase()
+                    .contains(query.toLowerCase()) ||
+                customerDetails.billNumber
+                    .toString()
+                    .toLowerCase()
+                    .contains(query.toLowerCase()) ||
+                customerDetails.phoneNumber
+                    .toString()
+                    .toLowerCase()
+                    .contains(query.toLowerCase()));
+      }).toList();
+    }
+    update();
   }
 }
