@@ -8,7 +8,7 @@ import 'package:get/get_navigation/src/root/get_material_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
- await StorageUtil.getInstance();
+  await StorageUtil.getInstance();
   setOrientationPortrait();
   runApp(const MyApp());
 }
@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
             navigatorKey: navigatorKey,
             color: whiteColor,
             getPages: AppPages.pages,
-            initialRoute: AppPages.initial,
+            initialRoute: Routes.landingPage,
             initialBinding: SplashBinding(),
             debugShowCheckedModeBanner: false,
           );

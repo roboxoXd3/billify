@@ -9,6 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../navigation/app_pages.dart';
+import '../../features/inventory/services/database_helper.dart';
+import 'home_controller.dart';
+
 class TemplateFormController extends GetxController {
   String billNumber = '',
       totalAmount = '',
@@ -34,7 +38,7 @@ class TemplateFormController extends GetxController {
 
   List addMultipleField = List.empty(growable: true);
   bool enableButton = false;
-  List<ProductController> productControllers = List.empty(growable: true);
+  List<ProductEntryController> productControllers = List.empty(growable: true);
   List<OpticalProductController> opticalProductController =
       List.empty(growable: true);
   bool isOpticalTemplate = false;
@@ -51,63 +55,98 @@ class TemplateFormController extends GetxController {
   }
 
   void addProductEntry() {
+    // Check if there are any empty products first
+    bool hasEmptyProduct = false;
+
     if (isOpticalTemplate) {
-      opticalProductController.add(
-        OpticalProductController(
-          frameNameController: TextEditingController(),
-          framePriceController: TextEditingController(),
-          lensNameController: TextEditingController(),
-          lensPriceController: TextEditingController(),
-          coatingController: TextEditingController(),
-          coatingPriceController: TextEditingController(),
-          discountController: TextEditingController(),
-          totalAmountController: TextEditingController(),
-        ),
-      );
+      hasEmptyProduct = opticalProductController.any((product) =>
+          product.frameNameController.text.isEmpty &&
+          product.framePriceController.text.isEmpty);
     } else {
-      productControllers.add(
-        ProductController(
-          productNameController: TextEditingController(),
-          qtyController: TextEditingController(),
-          amountController: TextEditingController(),
-          discountController: TextEditingController(),
-          totalAmountController: TextEditingController(),
-        ),
+      hasEmptyProduct = productControllers.any((product) =>
+          product.productNameController.text.isEmpty &&
+          product.qtyController.text.isEmpty &&
+          product.amountController.text.isEmpty);
+    }
+
+    // Only add new product if there are no empty ones
+    if (!hasEmptyProduct) {
+      if (isOpticalTemplate) {
+        opticalProductController.add(
+          OpticalProductController(
+            frameNameController: TextEditingController(),
+            framePriceController: TextEditingController(),
+            lensNameController: TextEditingController(),
+            lensPriceController: TextEditingController(),
+            coatingController: TextEditingController(),
+            coatingPriceController: TextEditingController(),
+            discountController: TextEditingController(),
+            totalAmountController: TextEditingController(),
+          ),
+        );
+      } else {
+        productControllers.add(
+          ProductEntryController(),
+        );
+      }
+      update();
+    } else {
+      Get.snackbar(
+        'Warning',
+        'Please fill the current product details first',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
     }
-    update();
   }
 
   validateForm() {
     enableButton = true;
 
-    if (isOpticalTemplate) {
-      for (int i = 0; i < opticalProductController.length; i++) {
-        var opticalProduct = opticalProductController[i];
+    // First check if there are any products added
+    if (productControllers.isEmpty) {
+      enableButton = false;
+      Get.snackbar(
+        'Error',
+        'Please add at least one product',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
 
-        if (opticalProduct.frameNameController.text.isEmpty ||
-            opticalProduct.framePriceController.text.isEmpty ||
-            opticalProduct.lensNameController.text.isEmpty ||
-            opticalProduct.lensPriceController.text.isEmpty ||
-            opticalProduct.coatingController.text.isEmpty ||
-            opticalProduct.coatingPriceController.text.isEmpty ||
-            opticalProduct.discountController.text.isEmpty ||
-            opticalProduct.totalAmountController.text.isEmpty) {
-          enableButton = false;
-        }
-      }
-    } else {
-      for (int i = 0; i < productControllers.length; i++) {
-        var product = productControllers[i];
+    // Then validate customer details
+    if (customerName.text.isEmpty ||
+        customerAge.text.isEmpty ||
+        customerNumber.text.isEmpty) {
+      enableButton = false;
+      Get.snackbar(
+        'Error',
+        'Please fill all required customer details',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
 
-        if (product.productNameController.text.isEmpty ||
-            product.qtyController.text.isEmpty ||
-            product.amountController.text.isEmpty ||
-            product.discountController.text.isEmpty ||
-            product.totalAmountController.text.isEmpty) {
-          enableButton = false;
-        }
-      }
+    // For selected products from inventory, we only need to verify they exist
+    bool hasValidProducts = productControllers.any((product) =>
+        product.productNameController.text.isNotEmpty &&
+        product.totalAmountController.text.isNotEmpty);
+
+    if (!hasValidProducts) {
+      enableButton = false;
+      Get.snackbar(
+        'Error',
+        'Please add valid products',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
     }
 
     update();
@@ -115,90 +154,81 @@ class TemplateFormController extends GetxController {
 
   saveProductData() async {
     if (templateKey.currentState!.validate()) {
-      if (enableButton == false) {
-        Fluttertoast.showToast(msg: "Please add item.");
-        return;
-      }
+      try {
+        // First update inventory stock
+        for (var productController in productControllers) {
+          if (productController.productNameController.text.isNotEmpty) {
+            final productName = productController.productNameController.text;
+            final quantity = int.parse(productController.qtyController.text);
 
-      // Create prescription details separately
-      Map<String, dynamic> prescriptionDetails = {
-        'rightSph': rightSphController.text,
-        'rightCyl': rightCylController.text,
-        'rightAxis': rightAxisController.text,
-        'leftSph': leftSphController.text,
-        'leftCyl': leftCylController.text,
-        'leftAxis': leftAxisController.text,
-      };
+            print(
+                'Updating stock for: $productName, Quantity: $quantity'); // Debug log
 
-      Map<String, dynamic> customerDetails = {
-        'billNumber': billNumber,
-        'name': customerName.text,
-        'age': customerAge.text,
-        'phoneNumber': customerNumber.text,
-        'location': customerLocation.text,
-        'created_at': DateFormat('dd/MM/yyyy').format(DateTime.now()),
-        'productType': productType,
-        'grandTotal': grandTotalAmount,
-        'leftPower': leftPowerController.text,
-        'rightPower': rightPowerController.text,
-        'leftVisual': leftVisualController.text,
-        'rightVisual': rightVisualController.text,
-        'otherMedical': otherMedicalController.text,
-      };
-
-      List<Map<String, dynamic>> productData;
-      if (isOpticalTemplate) {
-        productData = opticalProductController.map((product) {
-          return {
-            'productName': product.frameNameController.text,
-            'framePrice': product.framePriceController.text,
-            'lensName': product.lensNameController.text,
-            'lensPrice': product.lensPriceController.text,
-            'coating': product.coatingController.text,
-            'coatingPrice': product.coatingPriceController.text,
-            'discount': product.discountController.text,
-            'totalAmount': product.totalAmountController.text,
-          };
-        }).toList();
-      } else {
-        productData = productControllers.map((product) {
-          return {
-            'productName': product.productNameController.text,
-            'qty': product.qtyController.text,
-            'amount': product.amountController.text,
-            'discount': product.discountController.text,
-            'totalAmount': product.totalAmountController.text,
-          };
-        }).toList();
-      }
-
-      Map<String, dynamic> customerData = {
-        'customerDetails': customerDetails,
-        'productData': productData,
-        'prescriptionDetails': prescriptionDetails,
-      };
-
-      String? existingDataJson = StorageUtil.getString(dashBoardItem);
-      List<Map<String, dynamic>> dashboardData = [];
-
-      if (existingDataJson.validate().isNotEmpty) {
-        final decodedData = json.decode(existingDataJson);
-
-        if (decodedData is Map<String, dynamic>) {
-          dashboardData = [decodedData];
-        } else if (decodedData is List) {
-          dashboardData = List<Map<String, dynamic>>.from(decodedData);
+            final product =
+                await DatabaseHelper.instance.getProductByName(productName);
+            if (product != null) {
+              final newStock = product.currentStock - quantity;
+              if (newStock >= 0) {
+                print(
+                    'Old stock: ${product.currentStock}, New stock: $newStock'); // Debug log
+                await DatabaseHelper.instance
+                    .updateProductStock(product.sku, newStock);
+              } else {
+                throw Exception('Insufficient stock for $productName');
+              }
+            } else {
+              print('Product not found: $productName'); // Debug log
+            }
+          }
         }
+
+        // Then save bill details
+        final billId = await DatabaseHelper.instance.insertBill({
+          'billNumber': billNumber,
+          'name': customerName.text,
+          'age': customerAge.text,
+          'phoneNumber': customerNumber.text,
+          'location': customerLocation.text,
+          'grandTotal':
+              calculateTotalAmount(isOpticalTemplate: isOpticalTemplate),
+          'createdAt': DateFormat('dd/MM/yyyy').format(DateTime.now()),
+          'productType': isOpticalTemplate ? "2" : "1",
+        });
+
+        // Save bill items
+        List<Map<String, dynamic>> billItems = productControllers
+            .where((controller) =>
+                controller.productNameController.text.isNotEmpty)
+            .map((item) => {
+                  'productName': item.productNameController.text,
+                  'qty': item.qtyController.text,
+                  'amount': item.amountController.text,
+                  'totalAmount': item.totalAmountController.text,
+                })
+            .toList();
+
+        await DatabaseHelper.instance.insertBillItems(billId, billItems);
+
+        // Refresh bills list
+        Get.find<HomeController>().loadBills();
+
+        Get.back();
+        Get.snackbar(
+          'Success',
+          'Bill saved successfully',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      } catch (e) {
+        print('Error saving bill: $e'); // Debug log
+        Get.snackbar(
+          'Error',
+          e.toString(),
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
       }
-
-      dashboardData.add(customerData);
-
-      String updatedDataJson = json.encode(dashboardData);
-      await StorageUtil.putString(dashBoardItem, updatedDataJson);
-
-      Get.back();
     }
-    update();
   }
 
   void calculateTotal(qty, amountText, discountAmount) {
@@ -262,5 +292,52 @@ class TemplateFormController extends GetxController {
         return sum + totalAmount;
       });
     }
+  }
+
+  void addSelectedProducts(List<dynamic> products) {
+    // Clear any existing empty products first
+    productControllers.removeWhere((controller) =>
+        controller.productNameController.text.isEmpty &&
+        controller.qtyController.text.isEmpty &&
+        controller.amountController.text.isEmpty);
+
+    // Add the selected products
+    for (var product in products) {
+      final controller = ProductEntryController();
+      controller.productNameController.text = product.name;
+      controller.qtyController.text = '1'; // Default quantity
+      controller.amountController.text = product.sellingPrice.toString();
+      controller.discountController.text = '0'; // Default discount
+      controller.calculateTotal();
+      productControllers.add(controller);
+    }
+    update();
+  }
+
+  void saveBill() {
+    // Remove any empty products before saving
+    productControllers.removeWhere((controller) =>
+        controller.productNameController.text.isEmpty ||
+        controller.qtyController.text.isEmpty ||
+        controller.amountController.text.isEmpty);
+
+    // Continue with saving logic
+    // ...
+  }
+}
+
+class ProductEntryController {
+  final TextEditingController productNameController = TextEditingController();
+  final TextEditingController qtyController = TextEditingController();
+  final TextEditingController amountController = TextEditingController();
+  final TextEditingController discountController = TextEditingController();
+  final TextEditingController totalAmountController = TextEditingController();
+
+  void calculateTotal() {
+    final qty = int.tryParse(qtyController.text) ?? 0;
+    final amount = double.tryParse(amountController.text) ?? 0.0;
+    final discount = double.tryParse(discountController.text) ?? 0.0;
+    final total = (qty * amount) - ((qty * amount) * (discount / 100));
+    totalAmountController.text = total.toStringAsFixed(2);
   }
 }

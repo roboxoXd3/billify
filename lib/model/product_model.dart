@@ -7,6 +7,7 @@ class CustomerDetails {
   String? createdAt;
   String? productType;
   String? grandTotal;
+  String? selectedTemplateType;
 
   // Optical fields
   String? rightSph;
@@ -42,6 +43,7 @@ class CustomerDetails {
     this.leftVisual,
     this.rightVisual,
     this.otherMedical,
+    this.selectedTemplateType,
   });
 
   // Factory method to create an instance from JSON
@@ -66,6 +68,7 @@ class CustomerDetails {
       leftVisual: json['leftVisual'],
       rightVisual: json['rightVisual'],
       otherMedical: json['otherMedical'],
+      selectedTemplateType: json['selectedTemplateType'],
     );
   }
 
@@ -91,6 +94,7 @@ class CustomerDetails {
       'leftVisual': leftVisual,
       'rightVisual': rightVisual,
       'otherMedical': otherMedical,
+      'selectedTemplateType': selectedTemplateType,
     };
   }
 }

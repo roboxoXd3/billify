@@ -1,11 +1,12 @@
 import 'package:billify/UI/controller/template_controller.dart';
-import 'package:billify/UI/view/template.add_data.dart';
 import 'package:billify/Util/app_colors.dart';
 import 'package:billify/Util/common_method/common_textField.dart';
 import 'package:ext_plus/ext_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+
+import '../../navigation/app_pages.dart';
 
 class TemplateFormView extends StatelessWidget {
   const TemplateFormView({super.key});
@@ -60,11 +61,19 @@ class TemplateFormView extends StatelessWidget {
                                     6.width,
                                     const Icon(Icons.add_circle_outline_rounded)
                                         .onTap(() {
-                                      if (controller
-                                          .productControllers.isEmpty) {
-                                        controller.addProductEntry();
-                                      }
-                                      Get.to(() => const AddTemplateData());
+                                      Get.toNamed(
+                                        Routes.inventory,
+                                        arguments: {'isSelecting': true},
+                                      )?.then((selectedProducts) {
+                                        if (selectedProducts != null) {
+                                          if (controller
+                                              .productControllers.isEmpty) {
+                                            controller.addProductEntry();
+                                          }
+                                          controller.addSelectedProducts(
+                                              selectedProducts);
+                                        }
+                                      });
                                     })
                                   ],
                                 ),
@@ -88,7 +97,8 @@ class TemplateFormView extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Total: ${controller.calculateTotalAmount(isOpticalTemplate: controller.isOpticalTemplate)}",
+                      Text(
+                          "Total: ${controller.calculateTotalAmount(isOpticalTemplate: controller.isOpticalTemplate)}",
                           maxLines: 1,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
@@ -96,22 +106,27 @@ class TemplateFormView extends StatelessWidget {
                           )),
                       Container(
                         decoration: BoxDecoration(
-                            border: Border.all(color: black),
-                            borderRadius: BorderRadius.circular(12)),
+                          border: Border.all(color: black),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 10),
                         child: Row(
                           children: [
-                            const Text("Save",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                )),
+                            const Text(
+                              "Save",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
                             6.width,
                             const Icon(Icons.save_rounded),
                           ],
                         ),
-                      ).onTap(() => controller.saveProductData())
+                      ).onTap(() {
+                        controller.saveProductData();
+                      })
                     ],
                   ))
             ],
@@ -121,122 +136,111 @@ class TemplateFormView extends StatelessWidget {
 
   ListView productTemplateItems(TemplateFormController controller) {
     return ListView.builder(
-                                    itemCount:
-                                        controller.productControllers.length,
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemBuilder: (context, index) {
-                                      var item = controller
-                                          .productControllers[index];
-                                      if (item.productNameController.text
-                                          .isNotEmpty) {
-                                        return Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            4.height,
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text(
-                                                    item.productNameController
-                                                        .text,
-                                                    style: const TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w600)),
-                                                Text(
-                                                    item.totalAmountController
-                                                        .text,
-                                                    style: const TextStyle(
-                                                        fontSize: 14,
-                                                        fontWeight:
-                                                            FontWeight.w500)),
-                                              ],
-                                            ),
-                                            4.height,
-                                            Text(
-                                                "Qty. ${item.qtyController.text}",
-                                                style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight:
-                                                        FontWeight.w500)),
-                                            4.height,
-                                            index ==
-                                                    controller
-                                                            .productControllers
-                                                            .length -
-                                                        1
-                                                ? const IgnorePointer()
-                                                : const Divider()
-                                          ],
-                                        );
-                                      }
-                                      return const IgnorePointer();
-                                    });
+        itemCount: controller.productControllers.length,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemBuilder: (context, index) {
+          var item = controller.productControllers[index];
+          if (item.productNameController.text.isNotEmpty) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                4.height,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(item.productNameController.text,
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
+                    Text(item.amountController.text,
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+                8.height,
+                Row(
+                  children: [
+                    Expanded(
+                      child: DefaultTextField(
+                        hint: 'Quantity',
+                        controller: item.qtyController,
+                        keyboardType: TextInputType.number,
+                        onChange: (value) {
+                          item.calculateTotal();
+                          controller.update();
+                        },
+                      ),
+                    ),
+                    10.width,
+                    Expanded(
+                      child: DefaultTextField(
+                        hint: 'Discount %',
+                        controller: item.discountController,
+                        keyboardType: TextInputType.number,
+                        onChange: (value) {
+                          item.calculateTotal();
+                          controller.update();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                8.height,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Total: ${item.totalAmountController.text}",
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+                4.height,
+                index == controller.productControllers.length - 1
+                    ? const IgnorePointer()
+                    : const Divider()
+              ],
+            );
+          }
+          return const IgnorePointer();
+        });
   }
 
   ListView opticalTemplateItems(TemplateFormController controller) {
     return ListView.builder(
-                                    itemCount: controller
-                                        .opticalProductController.length,
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemBuilder: (context, index) {
-                                      var item = controller
-                                          .opticalProductController[index];
-                                      if (item.frameNameController.text
-                                          .isNotEmpty) {
-                                        return Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            4.height,
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text(
-                                                    item.frameNameController
-                                                        .text,
-                                                    style: const TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w600)),
-                                                Text(
-                                                    item.totalAmountController
-                                                        .text,
-                                                    style: const TextStyle(
-                                                        fontSize: 14,
-                                                        fontWeight:
-                                                            FontWeight.w500)),
-                                              ],
-                                            ),
-                                            4.height,
-                                            Text(
-                                                "Frame Price. ${item.framePriceController.text}",
-                                                style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight:
-                                                        FontWeight.w500)),
-                                            4.height,
-                                            index ==
-                                                    controller
-                                                            .productControllers
-                                                            .length -
-                                                        1
-                                                ? const IgnorePointer()
-                                                : const Divider()
-                                          ],
-                                        );
-                                      }
-                                      return const IgnorePointer();
-                                    });
+        itemCount: controller.opticalProductController.length,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemBuilder: (context, index) {
+          var item = controller.opticalProductController[index];
+          if (item.frameNameController.text.isNotEmpty) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                4.height,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(item.frameNameController.text,
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
+                    Text(item.totalAmountController.text,
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+                4.height,
+                Text("Frame Price. ${item.framePriceController.text}",
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w500)),
+                4.height,
+                index == controller.productControllers.length - 1
+                    ? const IgnorePointer()
+                    : const Divider()
+              ],
+            );
+          }
+          return const IgnorePointer();
+        });
   }
 
   Container customerDetailForm(TemplateFormController controller) {

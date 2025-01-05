@@ -9,6 +9,12 @@ import 'package:billify/UI/view/profile.dart';
 import 'package:billify/UI/view/splash_view.dart';
 import 'package:billify/UI/view/template_form.dart';
 import 'package:get/get.dart';
+import 'package:billify/UI/view/landing_page.dart';
+import 'package:billify/features/inventory/views/product_list_view.dart';
+import 'package:billify/features/inventory/bindings/product_binding.dart';
+import '../features/inventory/bindings/category_binding.dart';
+import '../features/inventory/views/widgets/category_bottom_sheet.dart';
+import 'package:billify/UI/view/bills_view.dart';
 
 part 'routes.dart';
 
@@ -47,5 +53,25 @@ class AppPages {
         binding: ProfileBinding(),
         transition: Transition.fadeIn,
         transitionDuration: transitionDuration),
+    GetPage(
+        name: Routes.landingPage,
+        page: () => const LandingPage(),
+        transition: Transition.fadeIn,
+        transitionDuration: transitionDuration),
+    GetPage<dynamic>(
+        name: _Paths.inventory,
+        page: () => const ProductListView(),
+        binding: ProductBinding(),
+        transition: Transition.fadeIn,
+        transitionDuration: transitionDuration),
+    GetPage(
+      name: _Paths.categories,
+      page: () => const CategoryBottomSheet(),
+      binding: CategoryBinding(),
+    ),
+    GetPage(
+      name: Routes.bills,
+      page: () => const BillsView(),
+    ),
   ];
 }

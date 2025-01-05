@@ -10,6 +10,8 @@ import 'package:billify/model/product_model.dart';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:file_selector/file_selector.dart';
 
 class PdfService {
   Future<void> generateAndPrintBill(ProductResponse billData) async {
@@ -38,12 +40,21 @@ class PdfService {
     print('Customer Details: ${billData.customerDetails?.toJson()}');
     print('Prescription Details: ${billData.prescriptionDetails?.toJson()}');
 
+    // Load a font that supports Unicode
+    final font = await PdfGoogleFonts.nunitoRegular();
+    final boldFont = await PdfGoogleFonts.nunitoBold();
+    final italicFont = await PdfGoogleFonts.nunitoItalic();
+
     final pdf = pw.Document();
 
-    // Modify the items section to ensure it's rendering
     pdf.addPage(
       pw.Page(
         margin: const pw.EdgeInsets.all(24),
+        theme: pw.ThemeData.withFont(
+          base: font,
+          bold: boldFont,
+          italic: italicFont,
+        ),
         build: (context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -59,8 +70,7 @@ class PdfService {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(companyName,
-                        style: pw.TextStyle(
-                            fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                        style: pw.TextStyle(fontSize: 24, font: boldFont)),
                     if (address.isNotEmpty) ...[
                       pw.SizedBox(height: 5),
                       pw.Text(address),
@@ -233,9 +243,19 @@ class PdfService {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
+    if (Platform.isMacOS) {
+      final bytes = await pdf.save();
+      await Printing.layoutPdf(
+        onLayout: (_) => Future.value(bytes),
+        name: 'Bill_${billData.customerDetails?.billNumber}',
+        format: PdfPageFormat.a4,
+        usePrinterSettings: true,
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+      );
+    }
   }
 
   // Helper method for prescription table
@@ -595,5 +615,276 @@ class PdfService {
 
     await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => pdf.save());
+  }
+
+  Future<pw.Document> generatePdf(ProductResponse billData) async {
+    // Load fonts first
+    final font = await PdfGoogleFonts.nunitoRegular();
+    final boldFont = await PdfGoogleFonts.nunitoBold();
+    final italicFont = await PdfGoogleFonts.nunitoItalic();
+
+    final pdf = pw.Document();
+
+    var profileData = StorageUtil.getObject(userData);
+    String companyName = '';
+    String address = '';
+    String phone = '';
+    String email = '';
+    String gst = '';
+    bool isOpticalTemplate = false;
+
+    if (profileData.isNotEmpty) {
+      var data = jsonDecode(profileData);
+      companyName = data['businessName'] ?? '';
+      address = data['address'] ?? '';
+      phone = data['phone'] ?? '';
+      email = data['email'] ?? '';
+      gst = data['gstNumber'] ?? '';
+      String template = data['selectedTemplateType'];
+      isOpticalTemplate = template == "2";
+    }
+
+    pdf.addPage(
+      pw.Page(
+        margin: const pw.EdgeInsets.all(24),
+        theme: pw.ThemeData.withFont(
+          base: font,
+          bold: boldFont,
+          italic: italicFont,
+        ),
+        build: (context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // Header with business details
+              pw.Container(
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(companyName,
+                        style: pw.TextStyle(fontSize: 24, font: boldFont)),
+                    if (address.isNotEmpty) ...[
+                      pw.SizedBox(height: 5),
+                      pw.Text(address),
+                    ],
+                    if (phone.isNotEmpty) pw.Text('Phone: $phone'),
+                    if (email.isNotEmpty) pw.Text('Email: $email'),
+                    if (gst.isNotEmpty) pw.Text('GST: $gst'),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 20),
+
+              // Bill details with date
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                      'Bill Number: ${billData.customerDetails?.billNumber ?? ''}'),
+                  pw.Text('Date: ${DateTime.now().toString().split(' ')[0]}'),
+                ],
+              ),
+
+              // ... existing customer details section ...
+
+              // Items section with debug text
+              pw.Container(
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                        'Items (${billData.productData?.length ?? 0} items)',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 10),
+
+                    // Always show what template we're using
+                    pw.Text(
+                        'Template: ${isOpticalTemplate ? "Optical" : "Default"}'),
+                    pw.SizedBox(height: 10),
+
+                    if (isOpticalTemplate) ...[
+                      // Optical template header
+                      pw.Row(
+                        children: [
+                          pw.Expanded(flex: 2, child: pw.Text('Frame')),
+                          pw.Expanded(child: pw.Text('Price')),
+                          pw.Expanded(flex: 2, child: pw.Text('Lens')),
+                          pw.Expanded(child: pw.Text('Price')),
+                          pw.Expanded(child: pw.Text('Total')),
+                        ],
+                      ),
+                      pw.Divider(),
+                      ...billData.productData
+                              ?.map(
+                                (item) => pw.Row(
+                                  children: [
+                                    pw.Expanded(
+                                        flex: 2,
+                                        child:
+                                            pw.Text(item.productName ?? '-')),
+                                    pw.Expanded(
+                                        child: pw.Text(item.framePrice ?? '0')),
+                                    pw.Expanded(
+                                        flex: 2,
+                                        child: pw.Text(item.lensName ?? '-')),
+                                    pw.Expanded(
+                                        child: pw.Text(item.lensPrice ?? '0')),
+                                    pw.Expanded(
+                                        child:
+                                            pw.Text(item.totalAmount ?? '0')),
+                                  ],
+                                ),
+                              )
+                              .toList() ??
+                          [pw.Text('No items')],
+                    ] else ...[
+                      // Default template
+                      pw.Row(
+                        children: [
+                          pw.Expanded(flex: 3, child: pw.Text('Product')),
+                          pw.Expanded(child: pw.Text('Qty')),
+                          pw.Expanded(child: pw.Text('Total')),
+                        ],
+                      ),
+                      pw.Divider(),
+                      ...billData.productData
+                              ?.map(
+                                (item) => pw.Row(
+                                  children: [
+                                    pw.Expanded(
+                                        flex: 3,
+                                        child:
+                                            pw.Text(item.productName ?? '-')),
+                                    pw.Expanded(
+                                        child: pw.Text(item.qty ?? '1')),
+                                    pw.Expanded(
+                                        child:
+                                            pw.Text(item.totalAmount ?? '0')),
+                                  ],
+                                ),
+                              )
+                              .toList() ??
+                          [pw.Text('No items')],
+                    ],
+                  ],
+                ),
+              ),
+
+              // Prescription details for optical template
+              if (isOpticalTemplate &&
+                  billData.prescriptionDetails != null) ...[
+                pw.SizedBox(height: 20),
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(),
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Prescription Details',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.SizedBox(height: 10),
+                      _buildPrescriptionTable(billData),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Grand Total
+              pw.SizedBox(height: 20),
+              pw.Container(
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Grand Total:',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                    pw.Text(billData.customerDetails?.grandTotal ?? '0'),
+                  ],
+                ),
+              ),
+
+              // Footer
+              pw.Container(
+                margin: const pw.EdgeInsets.only(top: 20),
+                alignment: pw.Alignment.center,
+                child: pw.Column(
+                  children: [
+                    pw.Text('Thank you for your business!',
+                        style: pw.TextStyle(fontStyle: pw.FontStyle.italic)),
+                    if (phone.isNotEmpty)
+                      pw.Text('For any queries, please contact: $phone'),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf;
+  }
+
+  Future<void> saveAsPdf(ProductResponse billData) async {
+    try {
+      print('Starting PDF generation...');
+      final pdf = await generatePdf(billData);
+      final bytes = await pdf.save();
+
+      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+        print('Opening save dialog...');
+        final FileSaveLocation? saveLocation = await getSaveLocation(
+          suggestedName:
+              'Bill_${billData.customerDetails?.billNumber ?? "unknown"}.pdf',
+          acceptedTypeGroups: [
+            const XTypeGroup(
+              label: 'PDF Documents',
+              extensions: ['pdf'],
+            ),
+          ],
+        );
+
+        if (saveLocation != null) {
+          print('Saving PDF to: ${saveLocation.path}');
+          final file = File(saveLocation.path);
+          await file.writeAsBytes(bytes);
+          print('PDF saved successfully!');
+        } else {
+          print('Save operation cancelled by user');
+        }
+      } else {
+        // For mobile platforms, save to app documents directory
+        final output = await getApplicationDocumentsDirectory();
+        final file = File(
+            '${output.path}/Bill_${billData.customerDetails?.billNumber ?? "unknown"}.pdf');
+        await file.writeAsBytes(bytes);
+        print('PDF saved to: ${file.path}');
+
+        // Optionally show the file to user using share_plus
+        await Share.shareXFiles([XFile(file.path)], text: 'Your bill PDF');
+      }
+    } catch (e, stackTrace) {
+      print('Error saving PDF: $e');
+      print('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 }

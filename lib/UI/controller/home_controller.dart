@@ -9,12 +9,17 @@ import 'package:get/get.dart';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:intl/intl.dart';
+
+import '../../features/inventory/services/database_helper.dart';
 
 class HomeController extends GetxController {
   List<ProductResponse> dashboardData = [];
   List<ProductResponse> filteredData = [];
   bool isOpticalTemplate = false;
   TextEditingController searchController = TextEditingController();
+  DateTime? selectedStartDate;
+  DateTime? selectedEndDate;
 
   @override
   void onInit() {
@@ -29,22 +34,54 @@ class HomeController extends GetxController {
       }
       update();
     }
-    fetchData();
+    loadBills();
     super.onInit();
   }
 
-  Future<void> fetchData() async {
-    var savedDataJson = StorageUtil.getString(dashBoardItem);
+  Future<void> loadBills() async {
+    try {
+      final bills = await DatabaseHelper.instance.getAllBills();
+      dashboardData = [];
 
-    if (savedDataJson.validate().isNotEmpty) {
-      if (savedDataJson.validate().isNotEmpty) {
-        dashboardData = (json.decode(savedDataJson) as List)
-            .map((item) => ProductResponse.fromJson(item))
+      for (var bill in bills) {
+        final items = await DatabaseHelper.instance.getBillItems(bill['id']);
+        // Filter out any empty items
+        final validItems = items
+            .where((item) =>
+                item['productName']?.isNotEmpty == true &&
+                item['quantity'] != null &&
+                item['quantity'] != 0)
             .toList();
+
+        if (validItems.isNotEmpty) {
+          // Only add bills with valid items
+          dashboardData.add(ProductResponse(
+            customerDetails: CustomerDetails(
+              billNumber: bill['billNumber'],
+              name: bill['customerName'],
+              age: bill['customerAge'],
+              phoneNumber: bill['customerPhone'],
+              location: bill['customerLocation'],
+              grandTotal: bill['grandTotal'],
+              createdAt: bill['createdAt'],
+            ),
+            productData: validItems
+                .map((item) => ProductData(
+                      productName: item['productName'],
+                      qty: item['quantity'].toString(),
+                      amount: item['amount'].toString(),
+                      totalAmount: item['totalAmount'].toString(),
+                    ))
+                .toList(),
+          ));
+        }
       }
+
+      filteredData = List.from(dashboardData);
+      update();
+    } catch (e) {
+      print('Error loading bills: $e');
     }
-    filteredData = List.from(dashboardData);
-    update();
   }
 
   Future<void> exportMonthlyBills(
@@ -166,22 +203,107 @@ class HomeController extends GetxController {
       filteredData = List.from(dashboardData);
     } else {
       filteredData = dashboardData.where((bill) {
-        final customerDetails = bill.customerDetails;
-        return customerDetails != null &&
-            (customerDetails.name
-                    .toString()
-                    .toLowerCase()
-                    .contains(query.toLowerCase()) ||
-                customerDetails.billNumber
-                    .toString()
-                    .toLowerCase()
-                    .contains(query.toLowerCase()) ||
-                customerDetails.phoneNumber
-                    .toString()
-                    .toLowerCase()
-                    .contains(query.toLowerCase()));
+        final name = bill.customerDetails?.name?.toLowerCase() ?? '';
+        final billNumber =
+            bill.customerDetails?.billNumber?.toLowerCase() ?? '';
+        final searchLower = query.toLowerCase();
+        return name.contains(searchLower) || billNumber.contains(searchLower);
       }).toList();
     }
+    update();
+  }
+
+  void deleteBill(int index) {
+    // Get the bill before removing it
+    final billToDelete = filteredData[index];
+
+    // Remove from both lists
+    filteredData.removeAt(index);
+    dashboardData.removeWhere((bill) =>
+        bill.customerDetails?.billNumber ==
+        billToDelete.customerDetails?.billNumber);
+
+    // Update storage
+    String updatedDataJson = json.encode(dashboardData);
+    StorageUtil.putString(dashBoardItem, updatedDataJson);
+
+    // Force UI update
+    update();
+
+    // Refresh the filtered data
+    if (searchController.text.isNotEmpty) {
+      searchBills(searchController.text);
+    }
+  }
+
+  double getTotalSales() {
+    return dashboardData.fold(
+        0.0,
+        (sum, bill) =>
+            sum +
+            (double.tryParse(bill.customerDetails?.grandTotal ?? '0') ?? 0));
+  }
+
+  int getTotalBills() {
+    return dashboardData.length;
+  }
+
+  double getCurrentMonthSales() {
+    final now = DateTime.now();
+    return dashboardData.where((bill) {
+      final billDate =
+          DateFormat('dd/MM/yyyy').parse(bill.customerDetails?.createdAt ?? '');
+      return billDate.month == now.month && billDate.year == now.year;
+    }).fold(
+        0.0,
+        (sum, bill) =>
+            sum +
+            (double.tryParse(bill.customerDetails?.grandTotal ?? '0') ?? 0));
+  }
+
+  double getTodaySales() {
+    final now = DateTime.now();
+    return dashboardData.where((bill) {
+      final billDate =
+          DateFormat('dd/MM/yyyy').parse(bill.customerDetails?.createdAt ?? '');
+      return billDate.day == now.day &&
+          billDate.month == now.month &&
+          billDate.year == now.year;
+    }).fold(
+        0.0,
+        (sum, bill) =>
+            sum +
+            (double.tryParse(bill.customerDetails?.grandTotal ?? '0') ?? 0));
+  }
+
+  void filterBillsByDate(DateTime? start, DateTime? end) {
+    selectedStartDate = start;
+    selectedEndDate = end;
+
+    if (start == null && end == null) {
+      filteredData = List.from(dashboardData);
+    } else {
+      filteredData = dashboardData.where((bill) {
+        final billDate = DateFormat('dd/MM/yyyy')
+            .parse(bill.customerDetails?.createdAt ?? '');
+        if (start != null && end != null) {
+          return billDate.isAfter(start.subtract(const Duration(days: 1))) &&
+              billDate.isBefore(end.add(const Duration(days: 1)));
+        } else if (start != null) {
+          return billDate.isAfter(start.subtract(const Duration(days: 1)));
+        } else if (end != null) {
+          return billDate.isBefore(end.add(const Duration(days: 1)));
+        }
+        return true;
+      }).toList();
+    }
+    update();
+  }
+
+  void clearDateFilter() {
+    selectedStartDate = null;
+    selectedEndDate = null;
+    filteredData = List.from(dashboardData);
     update();
   }
 }
