@@ -7,16 +7,10 @@ import 'package:billify/services/pdf_service.dart';
 import 'package:billify/features/inventory/services/database_helper.dart';
 import 'package:billify/UI/controller/home_controller.dart';
 
-class DataDetailView extends StatefulWidget {
-  ProductResponse? billData;
-  DataDetailView({super.key, this.billData});
-
-  @override
-  State<DataDetailView> createState() => _DataDetailViewState();
-}
-
-class _DataDetailViewState extends State<DataDetailView> {
+class DataDetailView extends GetView<HomeController> {
+  final ProductResponse? billData;
   final PdfService _pdfService = PdfService();
+  DataDetailView({super.key, this.billData});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +18,7 @@ class _DataDetailViewState extends State<DataDetailView> {
     double totalDiscount = 0.0;
 
     // Calculate totals
-    for (var item in widget.billData!.productData!) {
+    for (var item in billData!.productData!) {
       double itemTotal = double.parse(item.totalAmount.validate(value: "0"));
       double itemDiscount = double.parse(item.discount.validate(value: "0"));
       subtotal += itemTotal;
@@ -37,26 +31,26 @@ class _DataDetailViewState extends State<DataDetailView> {
         backgroundColor: bgColor,
         automaticallyImplyLeading: false,
         leading: IconButton(
-            padding: EdgeInsets.zero,
-            onPressed: () => Get.back(),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: whiteColor)),
-        title: const Text(
-          "Bill Detail",
-          style: TextStyle(color: whiteColor),
+          padding: EdgeInsets.zero,
+          onPressed: () => Get.back(),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: whiteColor),
+        ),
+        title: Text(
+          "bill_detail".tr,
+          style: const TextStyle(color: whiteColor),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.print_rounded, color: Colors.white),
-            onPressed: () => _pdfService.generateAndPrintBill(widget.billData!),
+            onPressed: () => _pdfService.generateAndPrintBill(billData!),
           ),
           IconButton(
             icon: const Icon(Icons.save_alt_rounded, color: Colors.white),
             onPressed: () async {
-              await _pdfService.saveAsPdf(widget.billData!);
+              await _pdfService.saveAsPdf(billData!);
               Get.snackbar(
-                'Success',
-                'PDF saved successfully',
+                'success'.tr,
+                'pdf_saved'.tr,
                 backgroundColor: Colors.green,
                 colorText: Colors.white,
                 snackPosition: SnackPosition.BOTTOM,
@@ -65,7 +59,7 @@ class _DataDetailViewState extends State<DataDetailView> {
           ),
           IconButton(
             icon: const Icon(Icons.share_rounded, color: Colors.white),
-            onPressed: () => _pdfService.generateAndShareBill(widget.billData!),
+            onPressed: () => _pdfService.generateAndShareBill(billData!),
           ),
           20.width
         ],
@@ -80,11 +74,9 @@ class _DataDetailViewState extends State<DataDetailView> {
                   cardview(Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Bill Number",
+                      Text("bill_number".tr,
                           style: Theme.of(context).textTheme.bodyLarge),
-                      Text(
-                          widget.billData!.customerDetails!.billNumber
-                              .validate(),
+                      Text(billData!.customerDetails!.billNumber.validate(),
                           style: Theme.of(context).textTheme.titleMedium),
                     ],
                   )),
@@ -94,7 +86,7 @@ class _DataDetailViewState extends State<DataDetailView> {
                   cardview(Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Items",
+                      Text("items".tr,
                           style: Theme.of(context)
                               .textTheme
                               .titleLarge!
@@ -102,11 +94,11 @@ class _DataDetailViewState extends State<DataDetailView> {
                                   fontWeight: FontWeight.w600, fontSize: 18)),
                       const Divider(),
                       ListView.builder(
-                        itemCount: widget.billData!.productData!.length,
+                        itemCount: billData!.productData!.length,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemBuilder: (context, index) {
-                          var item = widget.billData!.productData![index];
+                          var item = billData!.productData![index];
                           return Column(
                             children: [
                               Row(
@@ -163,8 +155,7 @@ class _DataDetailViewState extends State<DataDetailView> {
                                   ),
                                 ],
                               ),
-                              if (index !=
-                                  widget.billData!.productData!.length - 1)
+                              if (index != billData!.productData!.length - 1)
                                 const Divider(),
                             ],
                           );
@@ -177,7 +168,7 @@ class _DataDetailViewState extends State<DataDetailView> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text("Subtotal",
+                              Text("subtotal".tr,
                                   style: Theme.of(context).textTheme.bodyLarge),
                               Text("₹$subtotal",
                                   style: Theme.of(context).textTheme.bodyLarge),
@@ -188,7 +179,7 @@ class _DataDetailViewState extends State<DataDetailView> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text("Total Discount",
+                                Text("total_discount".tr,
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodyLarge!
@@ -205,13 +196,13 @@ class _DataDetailViewState extends State<DataDetailView> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text("Grand Total",
+                              Text("grand_total".tr,
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleLarge!
                                       .copyWith(fontWeight: FontWeight.bold)),
                               Text(
-                                "₹${widget.billData!.customerDetails!.grandTotal.validate()}",
+                                "₹${billData!.customerDetails!.grandTotal.validate()}",
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleLarge!
@@ -227,11 +218,9 @@ class _DataDetailViewState extends State<DataDetailView> {
                   cardview(Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Bill Date",
+                      Text("bill_date".tr,
                           style: Theme.of(context).textTheme.bodyLarge),
-                      Text(
-                          widget.billData!.customerDetails!.createdAt
-                              .validate(),
+                      Text(billData!.customerDetails!.createdAt.validate(),
                           style: Theme.of(context).textTheme.titleMedium),
                     ],
                   )),
@@ -247,34 +236,32 @@ class _DataDetailViewState extends State<DataDetailView> {
               onPressed: () {
                 Get.dialog(
                   AlertDialog(
-                    title: const Text('Delete Bill'),
-                    content: const Text(
-                        'Are you sure you want to delete this bill?'),
+                    title: Text('delete_bill'.tr),
+                    content: Text('delete_confirmation'.tr),
                     actions: [
                       TextButton(
                         onPressed: () => Get.back(),
-                        child: const Text('Cancel'),
+                        child: Text('cancel'.tr),
                       ),
                       TextButton(
                         onPressed: () async {
-                          await DatabaseHelper.instance.deleteBill(widget
-                              .billData!.customerDetails!.billNumber
-                              .validate());
+                          await DatabaseHelper.instance.deleteBill(
+                              billData!.customerDetails!.billNumber.validate());
                           Get.back(); // Close dialog
                           Get.back(); // Return to bills list
                           Get.find<HomeController>()
                               .loadBills(); // Refresh bills list
                           Get.snackbar(
-                            'Success',
-                            'Bill deleted successfully',
+                            'success'.tr,
+                            'bill_deleted'.tr,
                             backgroundColor: Colors.green,
                             colorText: Colors.white,
                             snackPosition: SnackPosition.BOTTOM,
                           );
                         },
-                        child: const Text(
-                          'Delete',
-                          style: TextStyle(color: Colors.red),
+                        child: Text(
+                          'delete'.tr,
+                          style: const TextStyle(color: Colors.red),
                         ),
                       ),
                     ],
@@ -288,9 +275,9 @@ class _DataDetailViewState extends State<DataDetailView> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Delete Bill',
-                style: TextStyle(
+              child: Text(
+                'delete_bill'.tr,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -307,7 +294,7 @@ class _DataDetailViewState extends State<DataDetailView> {
     return cardview(Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Customer Details",
+        Text("customer_details".tr,
             style: Theme.of(context)
                 .textTheme
                 .titleLarge!
@@ -315,26 +302,27 @@ class _DataDetailViewState extends State<DataDetailView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Cutomer Name", style: Theme.of(context).textTheme.bodyLarge),
-            Text(widget.billData!.customerDetails!.name.validate(),
+            Text("customer_name".tr,
+                style: Theme.of(context).textTheme.bodyLarge),
+            Text(billData!.customerDetails!.name.validate(),
                 style: Theme.of(context).textTheme.titleMedium),
           ],
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Customer Number",
+            Text("customer_number".tr,
                 style: Theme.of(context).textTheme.bodyLarge),
-            Text(widget.billData!.customerDetails!.phoneNumber.validate(),
+            Text(billData!.customerDetails!.phoneNumber.validate(),
                 style: Theme.of(context).textTheme.titleMedium),
           ],
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Customer Location",
+            Text("customer_location".tr,
                 style: Theme.of(context).textTheme.bodyLarge),
-            Text(widget.billData!.customerDetails!.location.validate(),
+            Text(billData!.customerDetails!.location.validate(),
                 style: Theme.of(context).textTheme.titleMedium),
           ],
         )

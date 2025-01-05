@@ -5,6 +5,14 @@ class StorageUtil {
   static StorageUtil? _storageUtil;
   static SharedPreferences? _preferences;
 
+  static Future<void> init() async {
+    if (_storageUtil == null) {
+      var secureStorage = StorageUtil._();
+      await secureStorage._init();
+      _storageUtil = secureStorage;
+    }
+  }
+
   static Future<StorageUtil?> getInstance() async {
     if (_storageUtil == null) {
       var secureStorage = StorageUtil._();
@@ -87,5 +95,4 @@ class StorageUtil {
     _preferences = await SharedPreferences.getInstance();
     _preferences?.clear();
   }
-
 }

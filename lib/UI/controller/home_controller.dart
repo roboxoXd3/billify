@@ -10,7 +10,7 @@ import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
-
+import 'package:share_plus/share_plus.dart';
 import '../../features/inventory/services/database_helper.dart';
 
 class HomeController extends GetxController {
@@ -305,5 +305,52 @@ class HomeController extends GetxController {
     selectedEndDate = null;
     filteredData = List.from(dashboardData);
     update();
+  }
+
+  Future<void> exportToExcel() async {
+    final excel = Excel.createExcel();
+    final sheet = excel[excel.getDefaultSheet()!];
+
+    // Add headers
+    sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0)).value =
+        TextCellValue('Bill Number');
+    sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 0)).value =
+        TextCellValue('Customer Name');
+    sheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 0)).value =
+        TextCellValue('Phone Number');
+    sheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: 0)).value =
+        TextCellValue('Total Amount');
+    sheet.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: 0)).value =
+        TextCellValue('Date');
+
+    // Add data
+    for (var i = 0; i < filteredData.length; i++) {
+      final bill = filteredData[i];
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1))
+          .value = TextCellValue(bill.customerDetails?.billNumber ?? '');
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1))
+          .value = TextCellValue(bill.customerDetails?.name ?? '');
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1))
+          .value = TextCellValue(bill.customerDetails?.phoneNumber ?? '');
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1))
+          .value = TextCellValue(bill.customerDetails?.grandTotal ?? '0');
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1))
+          .value = TextCellValue(bill.customerDetails?.createdAt ?? '');
+    }
+
+    // Save file
+    final directory = await getApplicationDocumentsDirectory();
+    final path =
+        '${directory.path}/bills_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+    final file = File(path);
+    await file.writeAsBytes(excel.encode()!);
+
+    // Share file
+    await Share.shareXFiles([XFile(path)], subject: 'Bills Export');
   }
 }

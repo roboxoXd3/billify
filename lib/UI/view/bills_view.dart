@@ -7,7 +7,7 @@ import '../../Util/app_colors.dart';
 import '../controller/home_controller.dart';
 import 'home.detail_view.dart';
 
-class BillsView extends StatelessWidget {
+class BillsView extends GetView<HomeController> {
   const BillsView({super.key});
 
   @override
@@ -26,9 +26,9 @@ class BillsView extends StatelessWidget {
               color: white,
             ),
           ),
-          title: const Text(
-            "Bills",
-            style: TextStyle(color: white),
+          title: Text(
+            "bills".tr,
+            style: const TextStyle(color: white),
           ),
           actions: [
             IconButton(
@@ -45,7 +45,7 @@ class BillsView extends StatelessWidget {
               child: TextField(
                 onChanged: (value) => controller.searchBills(value),
                 decoration: InputDecoration(
-                  hintText: 'Search bills by name or number...',
+                  hintText: 'search_bills'.tr,
                   prefixIcon: const Icon(Icons.search, color: Colors.grey),
                   filled: true,
                   fillColor: white,
@@ -75,7 +75,7 @@ class BillsView extends StatelessWidget {
                                 padding: const EdgeInsets.only(right: 8),
                                 child: Chip(
                                   label: Text(
-                                      'From: ${DateFormat('dd/MM/yyyy').format(controller.selectedStartDate!)}'),
+                                      '${('from'.tr)}: ${DateFormat('dd/MM/yyyy').format(controller.selectedStartDate!)}'),
                                   onDeleted: () => controller.filterBillsByDate(
                                       null, controller.selectedEndDate),
                                 ),
@@ -83,7 +83,7 @@ class BillsView extends StatelessWidget {
                             if (controller.selectedEndDate != null)
                               Chip(
                                 label: Text(
-                                    'To: ${DateFormat('dd/MM/yyyy').format(controller.selectedEndDate!)}'),
+                                    '${('to'.tr)}: ${DateFormat('dd/MM/yyyy').format(controller.selectedEndDate!)}'),
                                 onDeleted: () => controller.filterBillsByDate(
                                     controller.selectedStartDate, null),
                               ),
@@ -93,7 +93,7 @@ class BillsView extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () => controller.clearDateFilter(),
-                      child: const Text('Clear'),
+                      child: Text('clear'.tr),
                     ),
                   ],
                 ),
@@ -164,6 +164,28 @@ class BillsView extends StatelessWidget {
             ),
           ],
         ),
+        floatingActionButton: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            FloatingActionButton.extended(
+              heroTag: 'exportExcel',
+              onPressed: () async {
+                await controller.exportToExcel();
+                Get.snackbar(
+                  'success'.tr,
+                  'bills_exported'.tr,
+                  backgroundColor: Colors.green,
+                  colorText: Colors.white,
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              },
+              icon: const Icon(Icons.file_download),
+              label: Text('export_excel'.tr),
+              backgroundColor: Colors.green,
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
@@ -172,16 +194,18 @@ class BillsView extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Filter by Date'),
+        title: Text('filter_by_date'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('Start Date'),
-              subtitle: Text(controller.selectedStartDate != null
-                  ? DateFormat('dd/MM/yyyy')
-                      .format(controller.selectedStartDate!)
-                  : 'Not set'),
+              title: Text('start_date'.tr),
+              subtitle: Text(
+                controller.selectedStartDate != null
+                    ? DateFormat('dd/MM/yyyy')
+                        .format(controller.selectedStartDate!)
+                    : 'not_set'.tr,
+              ),
               onTap: () async {
                 final date = await showDatePicker(
                   context: context,
@@ -198,10 +222,13 @@ class BillsView extends StatelessWidget {
               },
             ),
             ListTile(
-              title: const Text('End Date'),
-              subtitle: Text(controller.selectedEndDate != null
-                  ? DateFormat('dd/MM/yyyy').format(controller.selectedEndDate!)
-                  : 'Not set'),
+              title: Text('end_date'.tr),
+              subtitle: Text(
+                controller.selectedEndDate != null
+                    ? DateFormat('dd/MM/yyyy')
+                        .format(controller.selectedEndDate!)
+                    : 'not_set'.tr,
+              ),
               onTap: () async {
                 final date = await showDatePicker(
                   context: context,
@@ -225,11 +252,11 @@ class BillsView extends StatelessWidget {
               controller.clearDateFilter();
               Get.back();
             },
-            child: const Text('Clear'),
+            child: Text('clear'.tr),
           ),
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Close'),
+            child: Text('close'.tr),
           ),
         ],
       ),

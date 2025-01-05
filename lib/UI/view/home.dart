@@ -7,33 +7,40 @@ import 'package:billify/navigation/app_pages.dart';
 import 'package:ext_plus/ext_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:billify/services/pdf_service.dart';
 
-class HomeView extends StatelessWidget {
+import '../../translations/language_controller.dart';
+import '../../widgets/language_selector.dart';
+
+class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<HomeController>(
-      init: HomeController(),
-      builder: (controller) => Scaffold(
+    Get.put(HomeController());
+    Get.put(LanguageController());
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        elevation: 0,
         backgroundColor: bgColor,
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: bgColor,
-          title: const Text("Dashboard", style: TextStyle(color: whiteColor)),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.receipt_long, color: whiteColor),
-              onPressed: () => Get.toNamed(Routes.bills),
-            ),
-            IconButton(
-              icon: const Icon(Icons.inventory, color: whiteColor),
-              onPressed: () => Get.toNamed(Routes.inventory),
-            ),
-          ],
-        ),
-        body: SingleChildScrollView(
+        title: Text("dashboard".tr, style: const TextStyle(color: whiteColor)),
+        actions: [
+          const LanguageSelector(),
+          IconButton(
+            icon: const Icon(Icons.receipt_long, color: whiteColor),
+            onPressed: () => Get.toNamed(Routes.bills),
+            tooltip: 'bills'.tr,
+          ),
+          IconButton(
+            icon: const Icon(Icons.inventory, color: whiteColor),
+            onPressed: () => Get.toNamed(Routes.inventory),
+            tooltip: 'inventory'.tr,
+          ),
+        ],
+      ),
+      body: GetBuilder<HomeController>(
+        builder: (controller) => SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -43,14 +50,14 @@ class HomeView extends StatelessWidget {
                 Row(
                   children: [
                     _buildStatCard(
-                      "Total Sales",
+                      "total_sales".tr,
                       "₹${controller.getTotalSales()}",
                       Icons.monetization_on,
                       Colors.green,
                     ).expand(),
                     16.width,
                     _buildStatCard(
-                      "Total Bills",
+                      "total_bills".tr,
                       "${controller.getTotalBills()}",
                       Icons.receipt_long,
                       Colors.blue,
@@ -61,14 +68,14 @@ class HomeView extends StatelessWidget {
                 Row(
                   children: [
                     _buildStatCard(
-                      "This Month",
+                      "this_month".tr,
                       "₹${controller.getCurrentMonthSales()}",
                       Icons.calendar_today,
                       Colors.orange,
                     ).expand(),
                     16.width,
                     _buildStatCard(
-                      "Today",
+                      "today".tr,
                       "₹${controller.getTodaySales()}",
                       Icons.today,
                       Colors.purple,
@@ -81,9 +88,9 @@ class HomeView extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      "Recent Bills",
-                      style: TextStyle(
+                    Text(
+                      "recent_bills".tr,
+                      style: const TextStyle(
                         color: whiteColor,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -91,9 +98,9 @@ class HomeView extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () => Get.toNamed(Routes.bills),
-                      child: const Text(
-                        "View All",
-                        style: TextStyle(color: Colors.blue),
+                      child: Text(
+                        "view_all".tr,
+                        style: const TextStyle(color: Colors.blue),
                       ),
                     ),
                   ],
@@ -104,10 +111,11 @@ class HomeView extends StatelessWidget {
             ),
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => Get.toNamed(Routes.templateForm),
-          child: const Icon(Icons.add),
-        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Get.toNamed(Routes.templateForm),
+        tooltip: 'add_bill'.tr,
+        child: const Icon(Icons.add),
       ),
     );
   }

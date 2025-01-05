@@ -8,7 +8,7 @@ import 'package:get/get.dart';
 
 import '../../navigation/app_pages.dart';
 
-class TemplateFormView extends StatelessWidget {
+class TemplateFormView extends GetView<TemplateFormController> {
   const TemplateFormView({super.key});
 
   @override
@@ -25,10 +25,8 @@ class TemplateFormView extends StatelessWidget {
                 onPressed: () => Get.back(),
                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
                     color: whiteColor)),
-            title: const Text(
-              "Add Bill",
-              style: TextStyle(color: whiteColor),
-            ),
+            title:
+                Text("add_bill".tr, style: const TextStyle(color: whiteColor)),
           ),
           body: Column(
             children: [
@@ -249,23 +247,23 @@ class TemplateFormView extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Customer Detail",
-              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+            Text(
+              "customer_detail".tr,
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
             ),
             10.height,
             DefaultTextField(
               validator: (v) =>
-                  v.validate().trim().isEmpty ? "please enter your name" : null,
-              hint: 'Enter your name',
+                  v.validate().trim().isEmpty ? "please_enter_name".tr : null,
+              hint: 'enter_name'.tr,
               keyboardType: TextInputType.name,
               controller: controller.customerName,
             ),
             10.height,
             DefaultTextField(
               validator: (v) =>
-                  v.validate().trim().isEmpty ? "please enter your age" : null,
-              hint: 'Enter your Age',
+                  v.validate().trim().isEmpty ? "please_enter_age".tr : null,
+              hint: 'enter_age'.tr,
               inputFormatters: [
                 LengthLimitingTextInputFormatter(3),
                 FilteringTextInputFormatter.digitsOnly
@@ -277,27 +275,25 @@ class TemplateFormView extends StatelessWidget {
             DefaultTextField(
               validator: (v) {
                 if (v.validate().isEmpty) {
-                  return "Please enter your phone number";
+                  return "please_enter_phone".tr;
                 }
-
                 if (v!.length != 10) {
-                  return "Please enter a valid 10-digit phone number";
+                  return "invalid_phone".tr;
                 }
-
                 return null;
               },
               inputFormatters: [
                 LengthLimitingTextInputFormatter(10),
                 FilteringTextInputFormatter.digitsOnly
               ],
-              hint: 'Enter your phone number',
+              hint: 'enter_phone'.tr,
               keyboardType: TextInputType.number,
               controller: controller.customerNumber,
             ),
             10.height,
             DefaultTextField(
               autoValidaMode: AutovalidateMode.disabled,
-              hint: 'Enter your location',
+              hint: 'enter_location'.tr,
               keyboardType: TextInputType.name,
               controller: controller.customerLocation,
             ),
@@ -455,9 +451,9 @@ class TemplateFormView extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Bill Number",
-              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+            Text(
+              "bill_number".tr,
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
             ),
             Text(
               controller.billNumber,
