@@ -11,7 +11,7 @@ class EditProductView extends GetView<ProductController> {
   final Product product;
   final _formKey = GlobalKey<FormState>();
 
-  EditProductView({Key? key, required this.product}) : super(key: key);
+  EditProductView({super.key, required this.product});
 
   final _nameController = TextEditingController();
   final _categoryController = TextEditingController();

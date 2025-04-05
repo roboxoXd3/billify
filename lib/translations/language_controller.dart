@@ -15,7 +15,7 @@ class LanguageController extends GetxController {
   }
 
   Future<void> loadSavedLanguage() async {
-    final savedLang = await StorageUtil.getString(LANGUAGE_KEY);
+    final savedLang = StorageUtil.getString(LANGUAGE_KEY);
     if (savedLang.isNotEmpty) {
       changeLanguage(savedLang);
     }

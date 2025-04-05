@@ -10,7 +10,6 @@ import 'package:billify/model/product_model.dart';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:file_selector/file_selector.dart';
 
 class PdfService {

@@ -7,7 +7,7 @@ import 'add_product_view.dart';
 import 'edit_product_view.dart';
 
 class ProductListView extends GetView<ProductController> {
-  const ProductListView({Key? key}) : super(key: key);
+  const ProductListView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,7 @@ class ProductListView extends GetView<ProductController> {
                   onPressed: () {
                     Get.back(result: controller.selectedProducts);
                   },
-                  child: Text(
+                  child: const Text(
                     'Done',
                     style: TextStyle(
                       color: white,

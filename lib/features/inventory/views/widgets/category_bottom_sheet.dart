@@ -5,7 +5,7 @@ import '../../models/category_model.dart';
 import 'package:billify/Util/app_colors.dart';
 
 class CategoryBottomSheet extends GetView<CategoryController> {
-  const CategoryBottomSheet({Key? key}) : super(key: key);
+  const CategoryBottomSheet({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -141,7 +141,7 @@ class DatabaseHelper {
       return id;
     } catch (e) {
       print('Error inserting product: $e');
-      throw e;
+      rethrow;
     }
   }
 

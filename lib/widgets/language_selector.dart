@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../translations/language_controller.dart';
 
 class LanguageSelector extends GetView<LanguageController> {
-  const LanguageSelector({Key? key}) : super(key: key);
+  const LanguageSelector({super.key});
 
   @override
   Widget build(BuildContext context) {

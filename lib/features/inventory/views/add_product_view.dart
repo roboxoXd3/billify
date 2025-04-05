@@ -8,7 +8,7 @@ import 'package:billify/Util/app_colors.dart';
 import 'package:billify/features/inventory/views/widgets/category_bottom_sheet.dart';
 
 class AddProductView extends GetView<ProductController> {
-  AddProductView({Key? key}) : super(key: key);
+  AddProductView({super.key});
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -99,8 +99,9 @@ class AddProductView extends GetView<ProductController> {
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value == null || value.isEmpty) return 'Required';
-                        if (double.tryParse(value) == null)
+                        if (double.tryParse(value) == null) {
                           return 'Invalid number';
+                        }
                         return null;
                       },
                     ),
@@ -114,8 +115,9 @@ class AddProductView extends GetView<ProductController> {
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value == null || value.isEmpty) return 'Required';
-                        if (double.tryParse(value) == null)
+                        if (double.tryParse(value) == null) {
                           return 'Invalid number';
+                        }
                         return null;
                       },
                     ),
@@ -133,8 +135,9 @@ class AddProductView extends GetView<ProductController> {
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value == null || value.isEmpty) return 'Required';
-                        if (int.tryParse(value) == null)
+                        if (int.tryParse(value) == null) {
                           return 'Invalid number';
+                        }
                         return null;
                       },
                     ),
@@ -148,8 +151,9 @@ class AddProductView extends GetView<ProductController> {
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value == null || value.isEmpty) return 'Required';
-                        if (int.tryParse(value) == null)
+                        if (int.tryParse(value) == null) {
                           return 'Invalid number';
+                        }
                         return null;
                       },
                     ),
